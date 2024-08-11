@@ -28,5 +28,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 ENV DIGITALL_DEPLOYMENT_MODE="docker"
 
-CMD [ "gunicorn", "-b", "0.0.0.0", "app:app" ]
+CMD [ "gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0.0.0.0", "app:app" ]
 
