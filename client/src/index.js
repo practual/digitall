@@ -1,8 +1,29 @@
-import React, {useEffect, useState} from 'react';
+import React, {createContext, useContext, useEffect, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {BrowserRouter, Routes, Route, useParams, useNavigate} from 'react-router-dom';
 
 import socket from './socket';
+
+const GameContext = createContext({});
+
+function Lobby () {
+    const game = useContext(GameContext);
+    const {activePlayerId, gameId} = useParams();
+    const navigate = useNavigate();
+    const joinGame = () => {
+        socket.emit("add_player", gameId, playerId => {
+            navigate(`/${gameId}/${playerId}`);
+        })
+    };
+    if (!activePlayerId) {
+        return (
+            <button onClick={joinGame}>Join</button>
+        );
+    }
+    return (
+        <span>Waiting for other players...</span>
+    );
+}
 
 function Number ({number, isUsed, addToExpression}) {
     if (isUsed) {
@@ -51,6 +72,13 @@ function Game () {
     }, [game]);
     if (!Object.keys(game).length) {
         return <></>;
+    }
+    if (game.players.length < 2) {
+        return (
+            <GameContext.Provider value={game}>
+                <Lobby />
+            </GameContext.Provider>
+        );
     }
     return (
         <div>
