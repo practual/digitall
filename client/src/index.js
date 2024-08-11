@@ -15,13 +15,19 @@ function Lobby () {
             navigate(`/${gameId}/${playerId}`);
         })
     };
+    const copyLink = () => {
+        navigator.clipboard.writeText(`${window.location.origin}/${gameId}`);
+    };
     if (!activePlayerId) {
         return (
             <button onClick={joinGame}>Join</button>
         );
     }
     return (
-        <span>Waiting for other players...</span>
+        <div>
+            <div>Waiting for other players...</div>
+            <button onClick={copyLink}>Copy game link</button>
+        </div>
     );
 }
 
@@ -104,7 +110,7 @@ function Game () {
 function Home () {
     const navigate = useNavigate();
     const createGame = async () => {
-        const response = await fetch('http://localhost:5000/api/game', {
+        const response = await fetch('/api/game', {
             method: "POST",
         });
         const gameData = await response.json();
