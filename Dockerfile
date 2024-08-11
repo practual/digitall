@@ -26,5 +26,7 @@ COPY --from=0 /home/node/app/client/build static
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD [ "python", "./app.py" ]
+ENV DIGITALL_DEPLOYMENT_MODE="docker"
+
+CMD [ "gunicorn", "-b", "0.0.0.0", "app:app" ]
 
