@@ -1,5 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import {BrowserRouter, Routes, Route, useParams, useNavigate} from 'react-router-dom';
+
+import socket from './socket';
 
 function Number ({number, isUsed, addToExpression}) {
     if (isUsed) {
@@ -8,7 +11,9 @@ function Number ({number, isUsed, addToExpression}) {
     return <button onClick={() => addToExpression(number)}>{number}</button>;
 }
 
-function Game ({game}) {
+function Game () {
+    const {gameId} = useParams();
+    const [game, setGameState] = useState({});
     const [usedNumbers, setUsedNumbers] = useState({});
     const [expression, setExpression] = useState("");
     const [evaluatedExpression, setEvaluatedExpression] = useState("");
@@ -31,12 +36,22 @@ function Game ({game}) {
         setUsedNumbers(Object.keys(usedNumbers).reduce((acc, el) => ({...acc, [el]: false}), {}));
     };
     useEffect(() => {
+        socket.on('game_state', setGameState);
+        socket.emit('get_game', gameId);
+        return () => {
+            socket.off('game_state', setGameState);
+        };
+    }, []);
+    useEffect(() => {
         setEvaluatedExpression("");
         setExpression("");
-        setUsedNumbers(game.options.reduce((acc, el) => (
+        game.options && setUsedNumbers(game.options.reduce((acc, el) => (
             {...acc, [el]: false}
         ), {}));
     }, [game]);
+    if (!Object.keys(game).length) {
+        return <></>;
+    }
     return (
         <div>
             <h2>{game.target}</h2>
@@ -58,20 +73,29 @@ function Game ({game}) {
     );
 }
 
-function App () {
-    const [game, setGame] = useState({});
+function Home () {
+    const navigate = useNavigate();
     const createGame = async () => {
         const response = await fetch('http://localhost:5000/api/game', {
             method: "POST",
         });
         const gameData = await response.json();
-        setGame(gameData);
+        navigate(gameData.game_id);
     };
     return (
-        <>
-            <button onClick={createGame}>New game</button>
-            {!!game.game_id && <Game game={game} />}
-        </>
+        <button onClick={createGame}>New game</button>
+    );
+}
+
+function App () {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path=":gameId" element={<Game />} />
+                <Route path=":gameId/:activePlayerId" element={<Game />} />
+                <Route path="*" element={<Home />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 
